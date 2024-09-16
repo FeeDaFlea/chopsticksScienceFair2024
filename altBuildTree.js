@@ -5,7 +5,7 @@ const fingerNum = 5,
   fileName = "altGTree.txt";
 
 let gTree = [ //Round, Playing, FromPos, CurrentPos, isEnd, isLoop, Payoff1
-  [0, null, null, [[1, 1], [1, 1]], false, false, undefined]
+  [0, undefined, undefined, [[1, 1], [1, 1]], false, false, undefined]
 ]
 
 function findSplits(vals, turn) { //Function declaration
@@ -157,11 +157,10 @@ function buildTreeStep(pos, turn) { //Function declaration
 
 function checkForLoop(pos, turn) {
   let check = false;
+  let arr = [];
   gTree.forEach(e => {
-    if (e[1] == turn) {
-      if (e[3] == pos) {
-        check = true;
-      }
+    if (e[1] == turn && e[3][0][0] == pos[0][0] && e[3][0][1] == pos[0][1] && e[3][1][0] == pos[1][0] && e[3][1][1] == pos[1][1]) {
+      check = true;
     }
   })
   return check
@@ -196,23 +195,18 @@ function buildTreeRound(round) {
   return i
 }
 
-function replacer(key, value) {
-  if (value === undefined) {
-    return "undefined";
-  }
-  return value;
-};
-
-for (let index = 0; index < 11; index++) {
+for (let index = 0; index < 6; index++) {
   let length = gTree.length;
   console.log("Round: " + index);
   console.log("Paths searched: " + buildTreeRound(index)); 
-  fs.appendFile(fileName, String(JSON.stringify(gTree.slice(length + 1), replacer) + "\n"), (err) => {
-    if (err) throw err;
-    console.log('The "data to append" was appended to file!');
-  });
 }
-
 
 fs.writeFileSync(fileName, "");
 console.log("File cleared!");
+
+let data = gTree.map(row => row.join("\t")).join("\n");
+
+fs.writeFile(fileName, data, (err) => {
+  if (err) throw err
+  console.log("Data written to file")
+})
