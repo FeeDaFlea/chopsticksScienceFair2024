@@ -5,7 +5,7 @@ const fingerNum = 5,
   fileName = "altGTree.txt";
 
 let gTree = [ //Round, Playing, FromPos, CurrentPos, isEnd, isLoop, Payoff1
-  [0, undefined, undefined, [[1, 1], [1, 1]], false, false, undefined]
+  [0, undefined, undefined, start, false, false, undefined]
 ]
 
 function findSplits(vals, turn) { //Function declaration
@@ -172,7 +172,7 @@ function buildTreeRound(round) {
   gTree.forEach(e => {
     if (e[0] == round) {
       buildTreeStep(e[3], turn).forEach(f => {
-        if (!(e[3][4] == true || e[3][5] == true)) {
+        if (!(e[4] == true || e[5] == true)) {
           let isEnd = false,
             isLoop = false,
             payoff1;
@@ -195,11 +195,25 @@ function buildTreeRound(round) {
   return i
 }
 
-for (let index = 0; index < 6; index++) {
+/* for (let index = 0; index < 6; index++) {
   let length = gTree.length;
   console.log("Round: " + index);
   console.log("Paths searched: " + buildTreeRound(index)); 
-}
+} */
+
+let testLength = 0,
+  index = 0,
+  isGlobalEnd = false;
+
+do {
+  testLength = gTree.length;
+  console.log("Round: " + index);
+  console.log("Paths searched: " + buildTreeRound(index));
+  index++;
+  if (gTree.length == testLength) {
+    isGlobalEnd = true;
+  }
+} while (!isGlobalEnd)
 
 fs.writeFileSync(fileName, "");
 console.log("File cleared!");
