@@ -5,8 +5,8 @@ const fingerNum = 5,
   fileName = "altGTree.txt";
 
 let gTree = [ //Round, Playing, FromPos, CurrentPos, isEnd, isLoop, Payoff1
-  [0, undefined, undefined, start, false, false, undefined]
-]
+  [0, undefined, undefined, start, false, false, undefined, undefined]
+];
 
 function findSplits(vals, turn) { //Function declaration
   //Initialize variables for function 
@@ -155,11 +155,12 @@ function buildTreeStep(pos, turn) { //Function declaration
   return findSplits(pos, turn).concat(findHits(pos, turn));
 }
 
-function checkForLoop(pos, turn) {
+function checkForLoop(pos, round) {
+  let turn = 2 - ((round + 1) % 2)
   let check = false;
   let arr = [];
   gTree.forEach(e => {
-    if (e[1] == turn && e[3][0][0] == pos[0][0] && e[3][0][1] == pos[0][1] && e[3][1][0] == pos[1][0] && e[3][1][1] == pos[1][1]) {
+    if (e[1] == turn && e[3][0][0] == pos[0][0] && e[3][0][1] == pos[0][1] && e[3][1][0] == pos[1][0] && e[3][1][1] == pos[1][1] && e[0] < round) {
       check = true;
     }
   })
@@ -168,7 +169,7 @@ function checkForLoop(pos, turn) {
 
 function buildTreeRound(round) {
   let i = 0;
-  let turn = (2 - ((round + 1) % 2));
+  let turn = 2 - ((round + 1) % 2);
   gTree.forEach(e => {
     if (e[0] == round) {
       buildTreeStep(e[3], turn).forEach(f => {
@@ -182,7 +183,7 @@ function buildTreeRound(round) {
           } else if (JSON.stringify(f[1]) == JSON.stringify([0, 0])) {
             payoff1 = 1;
             isEnd = true;
-          } else if (checkForLoop(f, turn)) {
+          } else if (checkForLoop(f, round)) {
             payoff1 = 0;
             isLoop = true;
           };
@@ -194,12 +195,6 @@ function buildTreeRound(round) {
   })
   return i
 }
-
-/* for (let index = 0; index < 6; index++) {
-  let length = gTree.length;
-  console.log("Round: " + index);
-  console.log("Paths searched: " + buildTreeRound(index)); 
-} */
 
 let testLength = 0,
   index = 0,
@@ -215,12 +210,48 @@ do {
   }
 } while (!isGlobalEnd)
 
+function rollbackPays(round) {
+  const GTR = gTree.filter(elm => elm[0] == round), //Get all elements in the specified round
+  turn = 2 - ((round + 1) % 2); //Save whose turn it is in the round
+  let checkArr = [], //Define some temporary variables
+    finalArr = [];
+  GTR.forEach(elm => { //Loop through the elements in the specified round
+    let data = JSON.stringify(elm[2])
+    let unique = true; //Assume that the specific element is the first one the code has seen
+    checkArr.forEach(e => { //Loop through the temporary checking array
+      if (data == e){ //If the "from" position in the current element has been seen before
+        unique = false; //It is not unique
+      }
+    })
+    if (unique) { //If it is unique
+      finalArr.push(data); //Add it to the final array
+      checkArr.push(data); //Add it to the checking array so it won't be unique again
+    }
+  })
+  finalArr.forEach(elm => { //Loop through the unique pay's froms
+    const GTRF = GTR.filter(e => JSON.stringify(e[2]) == elm); //Save all the elements in the round where the from is the same as the specific from in the unique array
+    const pays = GTRF.map(e => e[6]);
+    if (GTR[0][1] == 1) {
+      bestPay = Math.max(...pays);
+    } else if (GTR[0][1] == 2) {
+      bestPay = Math.min(...pays);
+    }
+    gTree.filter(e => e[0] == round - 1).filter(e => JSON.stringify(e[3]) == elm).filter(e => e[6] == undefined).forEach(e => {
+      e[6] = bestPay;
+    })
+  })
+}
+
+for(index--; index > 0; index--) {
+  rollbackPays(index);
+}
+
 fs.writeFileSync(fileName, "");
 console.log("File cleared!");
 
 let data = gTree.map(row => row.join("\t")).join("\n");
 
-fs.writeFile(fileName, data, (err) => {
-  if (err) throw err
-  console.log("Data written to file")
-})
+fs.writeFileSync(fileName, data)
+console.log("Data written to file")
+
+//Pause
