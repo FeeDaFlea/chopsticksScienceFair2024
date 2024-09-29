@@ -2,7 +2,8 @@ const fs = require("fs");
 
 const fingerNum = 5,
   start = [[1, 1], [1, 1]],
-  fileName = "altGTree.txt";
+  fileName = "altGTree.txt",
+  rawFileName = "rawGTree.txt";
 
 let gTree = [ //Round, Playing, FromPos, CurrentPos, isEnd, isLoop, Payoff1
   [0, undefined, undefined, start, false, false, undefined, undefined]
@@ -246,6 +247,15 @@ for(index--; index > 0; index--) {
   rollbackPays(index);
 }
 
+function removeDuplicates(arr) {
+  const strArr = arr.map(elm => JSON.stringify(elm));
+  const removedDups = Array.from(new Set(strArr)).map(elm => JSON.parse(elm));
+  return removedDups
+}
+
+gTree = removeDuplicates(gTree);
+console.log("Removed duplicates!")
+
 fs.writeFileSync(fileName, "");
 console.log("File cleared!");
 
@@ -253,5 +263,23 @@ let data = gTree.map(row => row.join("\t")).join("\n");
 
 fs.writeFileSync(fileName, data)
 console.log("Data written to file")
+
+fs.writeFileSync(rawFileName, "");
+console.log("Raw file cleared!");
+
+fs.writeFileSync(rawFileName, JSON.stringify(gTree));
+console.log("Data written to raw file!")
+
+function getBestMove(pos, turn) {
+  const x = gTree.filter(elm => (JSON.stringify(elm[2]) == JSON.stringify(pos)) && (elm[1] == turn));
+  const pays = x.map(elm => elm[6]);
+  let bestPay;
+  if (turn == 1) {
+    bestPay = Math.max(pays);
+  } else {
+    bestPay = Math.min(pays);
+  }
+  return x.filter(elm => elm[6] == bestPay)[0];
+}
 
 //Pause
