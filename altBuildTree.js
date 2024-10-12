@@ -161,7 +161,7 @@ function checkForLoop(pos, round) {
   let check = false;
   let arr = [];
   gTree.forEach(e => {
-    if (e[1] == turn && e[3][0][0] == pos[0][0] && e[3][0][1] == pos[0][1] && e[3][1][0] == pos[1][0] && e[3][1][1] == pos[1][1] && e[0] < round) {
+    if (e[1] == turn && e[3][0][0] == pos[0][0] && e[3][0][1] == pos[0][1] && e[3][1][0] == pos[1][0] && e[3][1][1] == pos[1][1] && e[0] < round - 1) {
       check = true;
     }
   })
@@ -185,7 +185,7 @@ function buildTreeRound(round) {
             payoff1 = 1;
             isEnd = true;
           } else if (checkForLoop(f, round)) {
-            payoff1 = 0;
+            // payoff1 = 0;
             isLoop = true;
           };
           gTree.push([(round + 1), turn, e[3], f, isEnd, isLoop, payoff1]);
@@ -215,7 +215,7 @@ function rollbackPays(round) {
   const GTR = gTree.filter(elm => elm[0] == round), //Get all elements in the specified round
   turn = 2 - ((round + 1) % 2); //Save whose turn it is in the round
   let checkArr = [], //Define some temporary variables
-    finalArr = [];
+    finalArr = []; //Unique froms
   GTR.forEach(elm => { //Loop through the elements in the specified round
     let data = JSON.stringify(elm[2])
     let unique = true; //Assume that the specific element is the first one the code has seen
@@ -237,49 +237,38 @@ function rollbackPays(round) {
     } else if (GTR[0][1] == 2) {
       bestPay = Math.min(...pays);
     }
-    gTree.filter(e => e[0] == round - 1).filter(e => JSON.stringify(e[3]) == elm).filter(e => e[6] == undefined).forEach(e => {
+    const bestMove = GTRF.filter(e => e[6] == bestPay)[0];
+    gTree.filter(e => e[1] == bestMove[1] && e[3] ==JSON.stringify(bestMove[3])).forEach(e => {
       e[6] = bestPay;
     })
   })
 }
 
-for(index--; index > 0; index--) {
-  rollbackPays(index);
+// for(index--; index > 0; index--) { //Rollback payoffs from the last round to the first
+//   rollbackPays(index);
+// }
+
+function removeDuplicates(arr) { //Function declaration
+  const strArr = arr.map(elm => JSON.stringify(elm)); //Convert all elements to strings
+  const removedDups = Array.from(new Set(strArr)).map(elm => JSON.parse(elm)); //Push the newly stringfied elements into a list that doesn't accept duplicates, then parse all elements back. 
+  return removedDups //End function by returning the unique array
 }
 
-function removeDuplicates(arr) {
-  const strArr = arr.map(elm => JSON.stringify(elm));
-  const removedDups = Array.from(new Set(strArr)).map(elm => JSON.parse(elm));
-  return removedDups
-}
-
-gTree = removeDuplicates(gTree);
+gTree = removeDuplicates(gTree); //Remove duplicates
 console.log("Removed duplicates!")
 
-fs.writeFileSync(fileName, "");
+fs.writeFileSync(fileName, ""); //Clear file
 console.log("File cleared!");
 
-let data = gTree.map(row => row.join("\t")).join("\n");
+let data = gTree.map(row => row.join("\t")).join("\n"); //Make the data pretty
 
-fs.writeFileSync(fileName, data)
+fs.writeFileSync(fileName, data); //Write data to file
 console.log("Data written to file")
 
-fs.writeFileSync(rawFileName, "");
+fs.writeFileSync(rawFileName, ""); //Clear raw file
 console.log("Raw file cleared!");
 
-fs.writeFileSync(rawFileName, JSON.stringify(gTree));
-console.log("Data written to raw file!")
+let rawData = JSON.stringify(gTree); //Let the data be the global tree as a string
 
-function getBestMove(pos, turn) {
-  const x = gTree.filter(elm => (JSON.stringify(elm[2]) == JSON.stringify(pos)) && (elm[1] == turn));
-  const pays = x.map(elm => elm[6]);
-  let bestPay;
-  if (turn == 1) {
-    bestPay = Math.max(pays);
-  } else {
-    bestPay = Math.min(pays);
-  }
-  return x.filter(elm => elm[6] == bestPay)[0];
-}
-
-//Pause
+fs.writeFileSync(rawFileName, rawData); //Write the raw data to the raw file
+console.log("Data written to raw file!");
